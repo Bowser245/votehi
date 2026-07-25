@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>VoteHi - Voter</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto; padding: 20px; }
-        .banner { width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; }
-        .option-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
-        .option-img { width: 80px; height: 80px; object-fit: cover; border-radius: 5px; margin-right: 15px; }
-        .left { display: flex; align-items: center; }
-    </style>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="vote-content">Chargement du vote...</div>
+    <div class="container">
+        <div id="vote-content">Chargement du vote...</div>
+
+        <div id="comments-section" style="margin-top: 40px; display: none;">
+            <h2>💬 Espace de discussion</h2>
+            <div class="card">
+                <input type="text" id="comment-author" placeholder="Ton pseudo (ex: Anonyme_123)" required>
+                <textarea id="comment-content" placeholder="Écris ton commentaire ici..." required></textarea>
+                <button type="button" onclick="postComment()" class="btn">Publier le commentaire</button>
+            </div>
+            <div id="comments-list">Chargement des commentaires...</div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -21,7 +26,6 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_gXblbgXH3n1ihrYa_OpB2A_r7nNSpCZ';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Récupérer l'ID dans l'URL (?id=...)
         const urlParams = new URLSearchParams(window.location.search);
         const voteId = urlParams.get('id');
 
@@ -33,6 +37,7 @@
                 return;
             }
 
+            // Récupérer le vote
             const { data, error } = await supabaseClient
                 .from('votes')
                 .select('*')
@@ -44,7 +49,16 @@
                 return;
             }
 
-            // Vérifier dans le localStorage si l'utilisateur a déjà voté pour cet ID
+            // Incrémenter le compteur de vues (via un stockage session pour éviter de spammer les vues à chaque rechargement)
+            if (!sessionStorage.getItem(`viewed_${voteId}`)) {
+                sessionStorage.setItem(`viewed_${voteId}`, "true");
+                await supabaseClient
+                    .from('votes')
+                    .update({ views: (data.views || 0) + 1 })
+                    .eq('id', voteId);
+                data.views = (data.views || 0) + 1;
+            }
+
             const hasVoted = localStorage.getItem(`voted_${voteId}`);
 
             let html = '';
@@ -53,6 +67,7 @@
             }
             html += `<h1>${data.title}</h1>`;
             html += `<p>${data.description || ''}</p>`;
+            html += `<p class="text-muted">👁️ ${data.views || 0} vues</p>`;
             html += `<h3>Options :</h3>`;
 
             data.options.forEach((opt, index) => {
@@ -63,31 +78,32 @@
                             <div>
                                 <strong>${opt.name}</strong><br>
                                 <small>${opt.description || ''}</small><br>
-                                <span>${opt.votes || 0} votes</span>
+                                <span><strong>${opt.votes || 0}</strong> votes</span>
                             </div>
                         </div>
                 `;
 
                 if (!hasVoted) {
-                    html += `<button onclick="castVote(${index})" style="padding: 10px 15px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Voter</button>`;
+                    html += `<button onclick="castVote(${index})" class="btn btn-success">Voter</button>`;
                 } else {
-                    html += `<span style="color: gray; font-style: italic;">Déjà voté</span>`;
+                    html += `<span class="text-muted" style="font-style: italic;">Déjà voté</span>`;
                 }
 
                 html += `</div>`;
             });
 
             container.innerHTML = html;
-            window.currentVoteData = data; // Stocker pour la fonction de vote
+            window.currentVoteData = data;
+
+            // Afficher la section commentaires et les charger
+            document.getElementById('comments-section').style.display = 'block';
+            loadComments();
         }
 
         async function castVote(optionIndex) {
             let data = window.currentVoteData;
-            
-            // Incrémenter l'option choisie
             data.options[optionIndex].votes = (data.options[optionIndex].votes || 0) + 1;
 
-            // Mettre à jour Supabase
             const { error } = await supabaseClient
                 .from('votes')
                 .update({ options: data.options })
@@ -96,11 +112,69 @@
             if (error) {
                 alert("Erreur lors de l'enregistrement du vote : " + error.message);
             } else {
-                // Enregistrer dans le localStorage pour bloquer les futurs votes de cet appareil
                 localStorage.setItem(`voted_${voteId}`, "true");
                 alert("Votre vote a bien été pris en compte !");
                 location.reload();
             }
+        }
+
+        async function loadComments() {
+            const listContainer = document.getElementById('comments-list');
+            const { data, error } = await supabaseClient
+                .from('comments')
+                .select('*')
+                .eq('vote_id', voteId)
+                .order('created_at', { ascending: false });
+
+            if (error || !data || data.length === 0) {
+                listContainer.innerHTML = '<p class="text-muted">Aucun commentaire pour le moment. Soyez le premier à réagir !</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(c => {
+                html += `
+                    <div class="card" style="padding: 12px; margin-bottom: 10px;">
+                        <strong>${escapeHtml(c.author)}</strong> <small class="text-muted">(${new Date(c.created_at).toLocaleDateString()} à ${new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})</small>
+                        <p style="margin-top: 6px; margin-bottom: 0;">${escapeHtml(c.content)}</p>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+        }
+
+        async function postComment() {
+            const authorInput = document.getElementById('comment-author');
+            const contentInput = document.getElementById('comment-content');
+
+            const author = authorInput.value.trim();
+            const content = contentInput.value.trim();
+
+            if (!author || !content) {
+                alert("Veuillez remplir votre pseudo et votre commentaire !");
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('comments')
+                .insert([{
+                    vote_id: voteId,
+                    author: author,
+                    content: content
+                }]);
+
+            if (error) {
+                alert("Erreur : " + error.message);
+            } else {
+                contentInput.value = '';
+                loadComments();
+            }
+        }
+
+        // Sécurité basique anti-XSS pour l'affichage du texte utilisateur
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         loadVotePage();
