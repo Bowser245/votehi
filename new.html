@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>VoteHi - Créer un vote</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+        .option-box { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; background: #fafafa; }
+        button { padding: 10px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Créer un nouveau vote</h1>
+    
+    <label>Titre du vote :</label>
+    <input type="text" id="vote-title" required>
+
+    <label>Description additionnelle :</label>
+    <textarea id="vote-desc"></textarea>
+
+    <label>Bannière (Image) :</label>
+    <input type="file" id="vote-banner" accept="image/*">
+
+    <h3>Options de vote</h3>
+    <div id="options-container">
+        <!-- Les options s'ajouteront ici -->
+    </div>
+    <button type="button" onclick="addOption()">Ajouter une option</button>
+    <br><br>
+    <button type="button" onclick="publishVote()" style="background: #28a745; color: white; font-weight: bold;">Publier le vote</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = ' TON_URL_SUPABASE ';
+        const SUPABASE_ANON_KEY = ' TA_CLE_ANON_SUPABASE ';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Convertir un fichier en Base64
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function addOption() {
+            const container = document.getElementById('options-container');
+            const div = document.createElement('div');
+            div.className = 'option-box';
+            div.innerHTML = `
+                <label>Nom de l'option (obligatoire) :</label>
+                <input type="text" class="opt-name" required>
+                <label>Description optionnelle :</label>
+                <input type="text" class="opt-desc">
+                <label>Image optionnelle :</label>
+                <input type="file" class="opt-img" accept="image/*">
+                <button type="button" onclick="this.parentElement.remove()" style="color:red;">Supprimer l'option</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Ajouter 2 options par défaut pour commencer
+        addOption();
+        addOption();
+
+        async function publishVote() {
+            const title = document.getElementById('vote-title').value;
+            const description = document.getElementById('vote-desc').value;
+            const bannerFile = document.getElementById('vote-banner').files[0];
+
+            if (!title) {
+                alert("Le titre est obligatoire !");
+                return;
+            }
+
+            let bannerBase64 = "";
+            if (bannerFile) {
+                bannerBase64 = await toBase64(bannerFile);
+            }
+
+            const optionBoxes = document.querySelectorAll('.option-box');
+            let options = [];
+
+            for (let box of optionBoxes) {
+                const name = box.querySelector('.opt-name').value;
+                const desc = box.querySelector('.opt-desc').value;
+                const imgFile = box.querySelector('.opt-img').files[0];
+
+                if (!name) {
+                    alert("Chaque option doit avoir un nom !");
+                    return;
+                }
+
+                let imgBase64 = "";
+                if (imgFile) {
+                    imgBase64 = await toBase64(imgFile);
+                }
+
+                options.push({
+                    name: name,
+                    description: desc,
+                    image: imgBase64,
+                    votes: 0
+                });
+            }
+
+            if (options.length < 2) {
+                alert("Il faut au moins 2 options pour voter !");
+                return;
+            }
+
+            // Générer une longue suite de chiffres unique pour l'ID
+            const voteId = Date.now().toString() + Math.floor(Math.random() * 100000).toString();
+
+            // Enregistrement dans Supabase
+            const { error } = await supabaseClient
+                .from('votes')
+                .insert([{
+                    id: voteId,
+                    title: title,
+                    description: description,
+                    banner: bannerBase64,
+                    options: options
+                }]);
+
+            if (error) {
+                alert("Erreur lors de la création : " + error.message);
+            } else {
+                window.location.href = `vote.html?id=${voteId}`;
+            }
+        }
+    </script>
+</body>
+</html>
