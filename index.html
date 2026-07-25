@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>VoteHi - Accueil</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f4f4f9; }
+        .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; background: #007bff; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Bienvenue sur VoteHi</h1>
+    <a href="new.html" class="btn">+ Créer un nouveau vote</a>
+    
+    <h2>🔥 Tendances (Les plus votés)</h2>
+    <div id="trends-container">Chargement...</div>
+
+    <!-- SDK Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = ' TON_URL_SUPABASE ';
+        const SUPABASE_ANON_KEY = ' TA_CLE_ANON_SUPABASE ';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadTrends() {
+            const container = document.getElementById('trends-container');
+            const { data, error } = await supabaseClient
+                .from('votes')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<p>Aucun vote pour le moment.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(v => {
+                // Calculer le total des votes
+                let totalVotes = 0;
+                if (v.options) {
+                    v.options.forEach(opt => totalVotes += (opt.votes || 0));
+                }
+
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <h3>${v.title}</h3>
+                    <p>${v.description || ''}</p>
+                    <p><strong>${totalVotes}</strong> votes au total</p>
+                    <a href="vote.html?id=${v.id}" class="btn">Voir et Voter</a>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        loadTrends();
+    </script>
+</body>
+</html>
