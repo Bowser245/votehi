@@ -1,0 +1,188 @@
+/* =================================================================ameron: Reset & Variables ================================================= */
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --success: #10b981;
+    --success-hover: #059669;
+    --danger: #ef4444;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* ================================================================= Layout & Containers ================================================= */
+.container, body {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1, h2, h3 {
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    letter-spacing: -0.025em;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin: 30px 0 15px 0;
+}
+
+/* ================================================================= Cards & Banners ================================================= */
+.card, .option-box, .option-card, .voting-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.banner {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+}
+
+/* ================================================================= Forms & Inputs ================================================= */
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+input[type="text"],
+textarea,
+input[type="file"] {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* ================================================================= Buttons & Links ================================================= */
+.btn, button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+}
+
+.btn:hover, button:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn:active, button:active {
+    transform: scale(0.98);
+}
+
+/* Variations de boutons */
+button[type="button"][style*="red"], .btn-danger {
+    background-color: var(--danger);
+}
+button[type="button"][style*="red"]:hover, .btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-success, button[style*="#28a745"] {
+    background-color: var(--success) !important;
+}
+.btn-success:hover, button[style*="#28a745"]:hover {
+    background-color: var(--success-hover) !important;
+}
+
+/* ================================================================= Specific Components ================================================= */
+.option-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-grow: 1;
+}
+
+.option-img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.option-box {
+    background: #fdfdfd;
+    border: 1px dashed var(--border-color);
+}
+
+/* Petits textes et métadonnées */
+small, .text-muted {
+    color: var(--text-muted);
+}
+
+p {
+    margin-bottom: 12px;
+}
