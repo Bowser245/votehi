@@ -9,7 +9,7 @@
     <div class="container">
         <a href='https://bowser245.github.io/votehi'><button><- Retour à l'accueil</button></a>
         <div id="vote-content">Chargement du vote...</div>
-
+        <div><button onclick="copierdlpp(this)" class="btn">🔗 Partager</button></div>
         <div id="comments-section" style="margin-top: 40px; display: none;">
             <h2>💬 Espace de discussion</h2>
             <div class="card">
@@ -29,7 +29,31 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const voteId = urlParams.get('id');
+        function copierdlpp(btn) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const voteId = urlParams.get('id');
 
+            if (!voteId) {
+                alert("Identifiant de vote introuvable.");
+                return;
+            }
+
+            const lienVote = `Vien voter sur VoteHi https://bowser245.github.io/votehi/vote.html?id=${voteId}`;
+
+            navigator.clipboard.writeText(lienVote).then(() => {
+                const texteOriginal = btn.innerText;
+        
+                // Modifie le texte grâce au "caller" (btn)
+                btn.innerText = "✅ Lien copié !";
+        
+                // Remet le texte d'origine après 2 secondes
+                setTimeout(() => {
+                    btn.innerText = texteOriginal;
+                }, 2000);
+            }).catch(err => {
+                console.error("Erreur lors de la copie : ", err);
+            });
+        }
         async function loadVotePage() {
             const container = document.getElementById('vote-content');
 
